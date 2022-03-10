@@ -3,7 +3,6 @@ from pytesseract import pytesseract as ptess
 import os
 import re
 
-img_ext = ['jpg, png']
 classtype = ['전선', '전필', '일선', '교양', '논문']
 
 def img2str(img):
@@ -14,20 +13,41 @@ def img2str(img):
     # 스샷에 별과 다른 숫자가 안나오는게 중요
     return class_list
 
-def str2
+def str2dict(txt):
+    cnt = 0
+    payload = []
+    #pattern = re.compile('^(0?[1-9]|1[0-2]):[0-5][0-9]$')
+    for line in txt:
+        if any(x in line for x in classtype):
+            line = line.split("]")
+            class_data = {
+                "class_name": line[1]
+            }
+        elif '~' in line:
+            day = line[0]
+            match = re.findall('\d\d:\d\d', line)
+            if len(match) < 2:
+                return 0
+            start = match[0]
+            end = match[1]
+            class_data["day"] = day
+            class_data["start"] = start
+            class_data["end"] = end
+            payload.append(class_data)
+        else:
+            continue
+    return payload
 
 def process_img(file_path):
-    for filename in os.listdir(file_path):
-        if any(x in filename for x in img_ext):
-            img = Image.open(filename)
-            text = img2str(img)
+    img = Image.open(file_path)
+    text = img2str(img)
+    retdict = str2dict(text)
+    return retdict
 
 def main():
-    #file_path = './table_images'
-    img = Image.open("./table_images/linetable3.png")
-    result = img2str(img)
-    for line in result:
-        print(line)
+    filepath = "./table_images/linetable3.png"
+    result = process_img(filepath)
+    print(result)
 
 if __name__ == '__main__':
     main()
